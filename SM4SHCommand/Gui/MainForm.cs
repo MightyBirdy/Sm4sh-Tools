@@ -8,10 +8,10 @@ using System.IO;
 using System.Windows.Forms;
 using static Sm4shCommand.Runtime;
 using SALT.PARAMS;
-using SALT.Scripting;
-using SALT.Scripting.AnimCMD;
+using SALT.Moveset;
+using SALT.Moveset.AnimCMD;
 using System.ComponentModel;
-using SALT.Scripting.MSC;
+using SALT.Moveset.MSC;
 
 namespace Sm4shCommand
 {
@@ -20,7 +20,7 @@ namespace Sm4shCommand
         public AcmdMain()
         {
             InitializeComponent();
-            this.Text = $"{Program.AssemblyTitle} {Program.Version} - ";
+            this.Text = $"{Program.Title} - ";
             Manager = new WorkspaceManager();
             ScriptFiles = new SortedList<string, IScriptCollection>();
         }
@@ -68,7 +68,7 @@ namespace Sm4shCommand
                 Runtime.LogMessage("============================================");
                 Action<object, DoWorkEventArgs> work = (object snd, DoWorkEventArgs arg) =>
                 {
-                    GetCommandInfo(Path.Combine(Application.StartupPath, "Events.cfg"));
+                    ACMD_INFO.OverrideInfo(Path.Combine(Application.StartupPath, "Events.cfg"));
                 };
                 Action<object, RunWorkerCompletedEventArgs> workDone = (object snd, RunWorkerCompletedEventArgs arg) =>
                 {
@@ -150,7 +150,7 @@ namespace Sm4shCommand
                     var node = new TreeNode("MSC") { Name = "nMSC" };
                     for (int i = 0; i < f.Scripts.Count; i++)
                     {
-                        var sn = new ScriptNode((uint)i, $"{i:X8}", f.Scripts.Values[i]);
+                        var sn = new ScriptNode((uint)i, $"{i:D8}", f.Scripts.Values[i]);
                         if (((MSCScript)f.Scripts.Values[i]).IsEntrypoint)
                             sn.Text = "Entrypoint";
                         else if (i == 0)
@@ -378,7 +378,7 @@ namespace Sm4shCommand
                     foreach (ScriptNode node in n.Nodes)
                     {
                         if (dict.ContainsKey(node.Identifier))
-                            node.Text = dict[node.Identifier];
+                            node.Text = $"{node.Index:X} - {dict[node.Identifier]}";
                     }
                 }
 
@@ -421,7 +421,7 @@ namespace Sm4shCommand
         }
         public void Reset()
         {
-            this.Text = $"{Program.AssemblyTitle} {Program.Version} - ";
+            this.Text = $"{Program.Title} - ";
             FileTree.Nodes.Clear();
             ScriptFiles.Clear();
             Viewport.TabPages.Clear();
@@ -429,7 +429,8 @@ namespace Sm4shCommand
             Manager = new WorkspaceManager();
             MotionTable = null;
             IDEMode = IDE_MODE.NONE;
- 
+            _nodeCache = null;
+
         }
 
         public enum IDE_MODE
@@ -443,6 +444,37 @@ namespace Sm4shCommand
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             this.Reset();
+        }
+
+        TreeNode[] _nodeCache;
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+            if (_nodeCache == null)
+            {
+                _nodeCache = new TreeNode[FileTree.Nodes.Count];
+                FileTree.Nodes.CopyTo(_nodeCache, 0);
+            }
+            bool addAll = string.IsNullOrEmpty(textBox1.Text);
+
+            FileTree.BeginUpdate();
+            FileTree.Nodes.Clear();
+
+            foreach (TreeNode root in _nodeCache)
+            {
+                TreeNode n = (TreeNode)root.Clone();
+                n.Nodes.Clear();
+                foreach (TreeNode leaf in root.Nodes)
+                {
+                    if (addAll || leaf.Text.Contains(textBox1.Text, StringComparison.OrdinalIgnoreCase))
+                    {
+                        n.Nodes.Add(leaf);
+                    }
+                }
+                FileTree.Nodes.Add(n);
+            }
+            FileTree.ExpandAll();
+            FileTree.EndUpdate();
+
         }
     }
 }

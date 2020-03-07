@@ -61,23 +61,23 @@ namespace Parameters
                         ParameterType type = (ParameterType)stream.ReadByte();
                         switch (type)
                         {
+                            case ParameterType.s8:
+                                wrp.Parameters.Add(new ParamEntry(reader.ReadSByte(), type));
+                                break;
                             case ParameterType.u8:
                                 wrp.Parameters.Add(new ParamEntry(reader.ReadByte(), type));
-                                break;
-                            case ParameterType.s8:
-                                wrp.Parameters.Add(new ParamEntry(reader.ReadByte(), type));
-                                break;
-                            case ParameterType.u16:
-                                wrp.Parameters.Add(new ParamEntry(reader.ReadUInt16().Reverse(), type));
                                 break;
                             case ParameterType.s16:
                                 wrp.Parameters.Add(new ParamEntry(reader.ReadInt16().Reverse(), type));
                                 break;
-                            case ParameterType.u32:
-                                wrp.Parameters.Add(new ParamEntry(reader.ReadUInt32().Reverse(), type));
+                            case ParameterType.u16:
+                                wrp.Parameters.Add(new ParamEntry(reader.ReadUInt16().Reverse(), type));
                                 break;
                             case ParameterType.s32:
                                 wrp.Parameters.Add(new ParamEntry(reader.ReadInt32().Reverse(), type));
+                                break;
+                            case ParameterType.u32:
+                                wrp.Parameters.Add(new ParamEntry(reader.ReadUInt32().Reverse(), type));
                                 break;
                             case ParameterType.f32:
                                 wrp.Parameters.Add(new ParamEntry(reader.ReadSingle().Reverse(), type));
@@ -124,23 +124,23 @@ namespace Parameters
                 var entry = node.Parameters[i];
                 switch (entry.Type)
                 {
+                    case ParameterType.s8:
+                        tbl.Rows[i][1] = (sbyte)entry.Value;
+                        break;
                     case ParameterType.u8:
                         tbl.Rows[i][1] = (byte)entry.Value;
-                        break;
-                    case ParameterType.s8:
-                        tbl.Rows[i][1] = (byte)entry.Value;
-                        break;
-                    case ParameterType.u16:
-                        tbl.Rows[i][1] = (ushort)entry.Value;
                         break;
                     case ParameterType.s16:
                         tbl.Rows[i][1] = (short)entry.Value;
                         break;
-                    case ParameterType.u32:
-                        tbl.Rows[i][1] = (uint)entry.Value;
+                    case ParameterType.u16:
+                        tbl.Rows[i][1] = (ushort)entry.Value;
                         break;
                     case ParameterType.s32:
                         tbl.Rows[i][1] = (int)entry.Value;
+                        break;
+                    case ParameterType.u32:
+                        tbl.Rows[i][1] = (uint)entry.Value;
                         break;
                     case ParameterType.f32:
                         tbl.Rows[i][1] = (float)entry.Value;
@@ -198,36 +198,45 @@ namespace Parameters
 
             ValuesWrapper wrp = treeView1.SelectedNode as ValuesWrapper;
 
-            for (int i = 0; i < wrp.Parameters.Count; i++)
+            for (int i = 0; i < wrp.Parameters.Count; ++i)
             {
                 var t = wrp.Parameters[i].Type;
-                object val = null;
-                switch (t)
+                object val = wrp.Parameters[i].Value;
+                try
                 {
-                    case ParameterType.u8:
-                    case ParameterType.s8:
-                        val = Convert.ToByte(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.u16:
-                        val = Convert.ToUInt16(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.s16:
-                        val = Convert.ToInt16(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.u32:
-                        val = Convert.ToUInt32(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.s32:
-                        val = Convert.ToInt32(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.f32:
-                        val = Convert.ToSingle(tbl.Rows[i][1]);
-                        break;
-                    case ParameterType.str:
-                        val = tbl.Rows[i][1];
-                        break;
+                    switch (t)
+                    {
+                        case ParameterType.s8:
+                            val = Convert.ToSByte(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.u8:
+                            val = Convert.ToByte(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.s16:
+                            val = Convert.ToInt16(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.u16:
+                            val = Convert.ToUInt16(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.s32:
+                            val = Convert.ToInt32(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.u32:
+                            val = Convert.ToUInt32(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.f32:
+                            val = Convert.ToSingle(tbl.Rows[i][1]);
+                            break;
+                        case ParameterType.str:
+                            val = tbl.Rows[i][1];
+                            break;
+                    }
                 }
-                ((ValuesWrapper)treeView1.SelectedNode).Parameters[i].Value = val;
+                catch (Exception)
+                {
+                }
+                wrp.Parameters[i].Value = val;
+                tbl.Rows[i][1] = val;
             }
         }
 
@@ -239,12 +248,12 @@ namespace Parameters
 
     public enum ParameterType : byte
     {
-        u8 = 1,
-        s8 = 2,
-        u16 = 3,
-        s16 = 4,
-        u32 = 5,
-        s32 = 6,
+        s8 = 1,
+        u8 = 2,
+        s16 = 3,
+        u16 = 4,
+        s32 = 5,
+        u32 = 6,
         f32 = 7,
         str = 8,
         group = 0x20
